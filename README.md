@@ -1,4 +1,5 @@
 # Movie Recommendation System
+##NOTE: The deployment link will crash because the the backend exceeds memory and size limits of free serverless platforms such as Vercel.
 
 A comprehensive movie recommendation engine built with Python and Flask, showcasing three distinct collaborative filtering approaches: SVD, KNN, and Deep Learning (Neural Collaborative Filtering).
 
@@ -35,6 +36,15 @@ Kaggle 1M MovieLens dataset link- https://www.kaggle.com/datasets/odedgolden/mov
    - Rate a few movies on the home page.
    - Select a model (SVD, KNN, or Deep Learning) from the dropdown.
    - Click "Get Recommendations".
+
+## Deployment Notes
+
+This project includes multiple recommendation approaches:
+KNN-based Model
+SVD-based Model
+Deep Learning Model (TensorFlow / Keras using Collaborative Filtering (CF))
+
+⚠️ Due to heavy ML dependencies (TensorFlow, NumPy, SciPy, Surprise), the backend exceeds memory and size limits of free serverless platforms such as Vercel.
 
 ## Project Structure
 
