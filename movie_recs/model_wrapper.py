@@ -1,4 +1,9 @@
-from DeepLearningModel import DeepLearningRecommender
+try:
+    from DeepLearningModel import DeepLearningRecommender
+    DEEP_AVAILABLE = True
+except ImportError:
+    DEEP_AVAILABLE = False
+
 from SVDmodel import SVDRecommender
 from KNNModel import KNNRecommender
 import pandas as pd
