@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommender System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Movie Recommender</h1>
+            <p>Select your favorite model and get personalized recommendations</p>
+        </header>
+
+        <div class="section">
+            <h2>Rate Some Movies (default taken if no ratings provided)</h2>
+            <div class="grid" id="rating-grid">
+                {% for movie in movies %}
+                <div class="card">
+                    <div class="movie-title">{{ movie.title }}</div>
+                    <div class="rating-label">Tap to rate</div>
+                    <div class="star-rating" data-movie-id="{{ movie.movie_id }}">
+                        <span class="star" data-value="1">&#9733;</span>
+                        <span class="star" data-value="2">&#9733;</span>
+                        <span class="star" data-value="3">&#9733;</span>
+                        <span class="star" data-value="4">&#9733;</span>
+                        <span class="star" data-value="5">&#9733;</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="rateMoreMovies()">Rate more movies</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Select Model & Get Recommendations</h2>
+            <div style="text-align: center; margin-bottom: 20px;">
+                <select id="model-select">
+                    <option value="dl">Deep Learning (TensorFlow)</option>
+                    <option value="svd">SVD (Matrix Factorization)</option>
+                    <option value="knn">KNN (Item-based)</option>
+                </select>
+                <button class="btn" onclick="getRecommendations()">Get Recommendations</button>
+            </div>
+
+            <div id="results" class="grid">
+                <!-- Recommendations will appear here -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Model Performance Summary</h2>
+            <div id="metrics-container">
+                Loading metrics...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Star rating interactions
+        function initStarRatings() {
+            const groups = document.querySelectorAll('.star-rating:not([data-initialized="true"])');
+
+            groups.forEach(group => {
+                const stars = Array.from(group.querySelectorAll('.star'));
+                const label = group.parentElement.querySelector('.rating-label');
+
+                let currentRating = Number(group.dataset.rating || 0);
+
+                const applySelection = (value) => {
+                    stars.forEach(star => {
+                        const v = Number(star.dataset.value);
+                        star.classList.toggle('selected', v <= value);
+                    });
+                    group.dataset.rating = value || '';
+                    if (label) {
+                        label.textContent = value ? `You rated this ${value}/5` : 'Tap to rate';
+                    }
+                };
+
+                // If there is an existing rating, reflect it in the UI
+                if (currentRating > 0) {
+                    applySelection(currentRating);
+                }
+
+                stars.forEach(star => {
+                    const value = Number(star.dataset.value);
+
+                    star.addEventListener('mouseenter', () => {
+                        stars.forEach(s => {
+                            const v = Number(s.dataset.value);
+                            s.classList.toggle('hovered', v <= value);
+                        });
+                    });
+
+                    star.addEventListener('mouseleave', () => {
+                        stars.forEach(s => s.classList.remove('hovered'));
+                    });
+
+                    star.addEventListener('click', () => {
+                        if (currentRating === value) {
+                            // Allow un-rating by clicking the same star again
+                            currentRating = 0;
+                        } else {
+                            currentRating = value;
+                        }
+                        applySelection(currentRating);
+                    });
+                });
+
+                group.addEventListener('mouseleave', () => {
+                    // Clear hover state when leaving the whole group
+                    stars.forEach(s => s.classList.remove('hovered'));
+                });
+
+                group.dataset.initialized = 'true';
+            });
+        }
+
+        async function getRecommendations() {
+            const model = document.getElementById('model-select').value;
+            const ratings = {};
+
+            document.querySelectorAll('.star-rating').forEach(group => {
+                const ratingValue = group.dataset.rating;
+                if (ratingValue) {
+                    ratings[group.dataset.movieId] = parseFloat(ratingValue);
+                }
+            });
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading recommendations...</p>';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model, ratings })
+                });
+
+                const data = await response.json();
+
+                resultsDiv.innerHTML = '';
+                data.recommendations.forEach(rec => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="movie-title">${rec.title}</div>
+                        <div style="font-size: 0.9em; color: #aaa;">${rec.genres}</div>
+                        <div style="color: #a29bfe; font-weight: bold; margin-top: 5px;">
+                            Score: ${rec.prediction.toFixed(2)}
+                        </div>
+                    `;
+                    resultsDiv.appendChild(card);
+                });
+
+                // Refresh metrics so user always sees up-to-date numbers
+                await loadMetrics();
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultsDiv.innerHTML = '<p style="color: red">Error fetching recommendations.</p>';
+            }
+        }
+
+        async function loadMetrics() {
+            try {
+                const response = await fetch('/metrics');
+                const data = await response.json();
+
+                const metricsDiv = document.getElementById('metrics-container');
+
+                // Determine best per metric
+                const models = ['svd', 'knn', 'dl'];
+                const names = { svd: 'SVD', knn: 'KNN', dl: 'Deep Learning' };
+
+                const bestRmse = models.reduce((best, m) =>
+                    data[m].rmse < data[best].rmse ? m : best, 'svd');
+                const bestMae = models.reduce((best, m) =>
+                    data[m].mae < data[best].mae ? m : best, 'svd');
+                const bestPrecision = models.reduce((best, m) =>
+                    data[m].precision_at_10 > data[best].precision_at_10 ? m : best, 'svd');
+                const bestRecall = models.reduce((best, m) =>
+                    data[m].recall_at_10 > data[best].recall_at_10 ? m : best, 'svd');
+                const bestCoverage = models.reduce((best, m) =>
+                    data[m].coverage > data[best].coverage ? m : best, 'svd');
+
+                metricsDiv.innerHTML = `
+                    <div class="metrics-grid">
+                        <div class="metrics-card">
+                            <div class="metrics-title">SVD (Matrix Factorization)</div>
+                            <div class="metrics-row">RMSE: ${data.svd.rmse.toFixed(3)}${bestRmse === 'svd' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">MAE: ${data.svd.mae.toFixed(3)}${bestMae === 'svd' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Precision@10: ${data.svd.precision_at_10.toFixed(2)}${bestPrecision === 'svd' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Recall@10: ${data.svd.recall_at_10.toFixed(2)}${bestRecall === 'svd' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Coverage: ${data.svd.coverage.toFixed(2)}${bestCoverage === 'svd' ? ' (best)' : ''}</div>
+                        </div>
+                        <div class="metrics-card">
+                            <div class="metrics-title">KNN (Item-based)</div>
+                            <div class="metrics-row">RMSE: ${data.knn.rmse.toFixed(3)}${bestRmse === 'knn' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">MAE: ${data.knn.mae.toFixed(3)}${bestMae === 'knn' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Precision@10: ${data.knn.precision_at_10.toFixed(2)}${bestPrecision === 'knn' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Recall@10: ${data.knn.recall_at_10.toFixed(2)}${bestRecall === 'knn' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Coverage: ${data.knn.coverage.toFixed(2)}${bestCoverage === 'knn' ? ' (best)' : ''}</div>
+                        </div>
+                        <div class="metrics-card">
+                            <div class="metrics-title">Deep Learning (TensorFlow)</div>
+                            <div class="metrics-row">RMSE: ${data.dl.rmse.toFixed(3)}${bestRmse === 'dl' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">MAE: ${data.dl.mae.toFixed(3)}${bestMae === 'dl' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Precision@10: ${data.dl.precision_at_10.toFixed(2)}${bestPrecision === 'dl' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Recall@10: ${data.dl.recall_at_10.toFixed(2)}${bestRecall === 'dl' ? ' (best)' : ''}</div>
+                            <div class="metrics-row">Coverage: ${data.dl.coverage.toFixed(2)}${bestCoverage === 'dl' ? ' (best)' : ''}</div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 16px; color: #b3b3b3; font-size: 0.9rem;">
+                        Lower <strong>RMSE/MAE</strong> is better. Higher <strong>Precision, Recall, Coverage</strong> is better.
+                        The word <strong>(best)</strong> marks which model wins for each metric.
+                    </p>
+                `;
+            } catch (error) {
+                console.error('Error loading metrics:', error);
+                const metricsDiv = document.getElementById('metrics-container');
+                metricsDiv.textContent = 'Unable to load metrics.';
+            }
+        }
+
+        async function rateMoreMovies() {
+            const existingIds = [];
+            document.querySelectorAll('.star-rating').forEach(group => {
+                existingIds.push(group.dataset.movieId);
+            });
+
+            try {
+                const response = await fetch('/more_movies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ existing_ids: existingIds })
+                });
+                const data = await response.json();
+
+                const grid = document.getElementById('rating-grid');
+                data.movies.forEach(movie => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.innerHTML = `
+                        <div class="movie-title">${movie.title}</div>
+                        <div class="rating-label">Tap to rate</div>
+                        <div class="star-rating" data-movie-id="${movie.movie_id}">
+                            <span class="star" data-value="1">&#9733;</span>
+                            <span class="star" data-value="2">&#9733;</span>
+                            <span class="star" data-value="3">&#9733;</span>
+                            <span class="star" data-value="4">&#9733;</span>
+                            <span class="star" data-value="5">&#9733;</span>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+
+                // Initialize star interactions only for newly added groups
+                initStarRatings();
+            } catch (error) {
+                console.error('Error loading more movies:', error);
+            }
+        }
+
+        // Load metrics on startup
+        loadMetrics();
+        initStarRatings();
+    </script>
+</body>
+
+</html>

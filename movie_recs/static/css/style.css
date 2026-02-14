@@ -1,0 +1,214 @@
+:root {
+    --primary: #800000; /* Maroon */
+    --primary-hover: #a00000;
+    --background: #000000; /* Black */
+    --surface: #1a1a1a;
+    --text: #ffffff;
+    --text-muted: #b3b3b3;
+    --border: #333333;
+    --shadow: rgba(0, 0, 0, 0.5);
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: radial-gradient(circle at top, #330000 0, #000000 40%, #000000 100%);
+    color: var(--text);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 50px;
+    padding: 20px;
+    border-bottom: 2px solid var(--primary);
+}
+
+h1 {
+    color: var(--primary);
+    font-size: 3rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px var(--shadow);
+}
+
+p {
+    color: var(--text-muted);
+}
+
+.section {
+    background-color: var(--surface);
+    padding: 30px;
+    border-radius: 12px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 20px var(--shadow);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    color: var(--primary);
+    border-left: 5px solid var(--primary);
+    padding-left: 15px;
+    margin-bottom: 25px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 25px;
+}
+
+.card {
+    background: linear-gradient(145deg, #262626, #121212);
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.7);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(128, 0, 0, 0.2);
+    border-color: var(--primary);
+}
+
+.movie-title {
+    font-weight: bold;
+    margin-bottom: 15px;
+    height: 50px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+}
+
+/* 3D Button Styles */
+button.btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    position: relative;
+    top: 0;
+    transition: all 0.1s ease-in-out;
+    box-shadow: 0 6px 0 #500000, 0 10px 10px rgba(0,0,0,0.3); /* The 3D effect */
+}
+
+button.btn:active {
+    top: 6px; /* Move down */
+    box-shadow: 0 0 0 #500000, 0 0 0 rgba(0,0,0,0.3); /* Remove shadow to simulate press */
+}
+
+button.btn:hover {
+    background-color: var(--primary-hover);
+}
+
+button.btn.btn-secondary {
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    box-shadow: 0 6px 0 rgba(80, 0, 0, 0.8), 0 10px 10px rgba(0, 0, 0, 0.3);
+}
+
+button.btn.btn-secondary:hover {
+    background-color: rgba(128, 0, 0, 0.15);
+}
+
+/* Form Elements */
+select {
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--surface);
+    color: white;
+    border: 1px solid var(--primary);
+    font-size: 1rem;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.rating-input {
+    display: none;
+}
+
+.rating-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.star-rating {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    perspective: 400px;
+}
+
+.star {
+    font-size: 1.6rem;
+    color: #444444;
+    cursor: pointer;
+    text-shadow: 0 2px 3px rgba(0, 0, 0, 0.7);
+    transition: transform 0.15s ease, text-shadow 0.15s ease, color 0.15s ease;
+    transform-origin: center bottom;
+}
+
+.star.hovered,
+.star.selected {
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.9), 0 4px 10px rgba(0, 0, 0, 0.9);
+    transform: translateY(-2px) scale(1.08) rotateX(8deg);
+}
+
+#metricsChart {
+    max-width: 800px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.02);
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.metrics-card {
+    background: linear-gradient(145deg, #262626, #121212);
+    border-radius: 10px;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 20px var(--shadow);
+}
+
+.metrics-title {
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+.metrics-row {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin: 3px 0;
+}
